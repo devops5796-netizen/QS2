@@ -1,0 +1,279 @@
+name: QatarSale Categories Scraper
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          # cars_for_rent — 75 pages / 5 jobs
+          - {category: cars_for_rent, start: 1,  end: 15}
+          - {category: cars_for_rent, start: 16, end: 30}
+          - {category: cars_for_rent, start: 31, end: 45}
+          - {category: cars_for_rent, start: 46, end: 60}
+          - {category: cars_for_rent, start: 61, end: 75}
+
+          # special_numbers — 105 pages / 5 jobs
+          - {category: special_numbers-plate_numbers, start: 1,  end: 21}
+          - {category: special_numbers-plate_numbers, start: 22, end: 42}
+          - {category: special_numbers-plate_numbers, start: 43, end: 63}
+          - {category: special_numbers-plate_numbers, start: 64, end: 84}
+          - {category: special_numbers-plate_numbers, start: 85, end: 105}
+
+          # bikes — 20 pages / 2 jobs
+          - {category: bikes, start: 1,  end: 10}
+          - {category: bikes, start: 11, end: 20}
+
+          # caravan — 5 pages / 2 jobs
+          - {category: caravan, start: 1, end: 3}
+          - {category: caravan, start: 4, end: 5}
+
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install "scrapling[all]" openpyxl
+          playwright install chromium
+          playwright install-deps chromium
+          python -m patchright install chromium
+
+      - name: Run scraper
+        env:
+          CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+          CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+        run: |
+          python -u main.py ${{ matrix.category }} ${{ matrix.start }} ${{ matrix.end }}
+
+      - name: Upload Excel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: excel-${{ matrix.category }}-${{ matrix.start }}-${{ matrix.end }}
+          path: |
+            ${{ matrix.category }}_${{ matrix.start }}_${{ matrix.end }}.xlsx
+            products_${{ matrix.category }}_${{ matrix.start }}_${{ matrix.end }}_failed.txt
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: scrape
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        category: [cars_for_rent, special_numbers-plate_numbers, bikes, caravan]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pandas openpyxl boto3
+
+      - name: Download artifacts for ${{ matrix.category }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: excel-${{ matrix.category }}-*
+          merge-multiple: true
+          path: excel_parts/
+
+      - name: Merge and upload ${{ matrix.category }}
+        env:
+          CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+          CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+        run: |
+          python << 'EOF'
+          import pandas as pd
+          import glob, boto3, os
+          from datetime import datetime
+
+          category = "${{ matrix.category }}"
+          files = glob.glob('excel_parts/*.xlsx')
+
+          if not files:
+              print(f"No Excel files found for {category}")
+              exit(0)
+
+          dfs = [pd.read_excel(f) for f in files]
+          merged = pd.concat(dfs, ignore_index=True)
+          merged = merged.drop_duplicates(subset=['product_url'], keep='first')
+
+          output_file = f"{category}.xlsx"
+          with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+              merged.to_excel(writer, sheet_name=category[:31], index=False)
+
+          total = len(merged)
+          print(f"Category: {category} | Rows: {total} | Files merged: {len(files)}")
+
+          # Summary
+          summary_file = f"scrape_summary_{category}.txt"
+          with open(summary_file, 'w') as f:
+              f.write(f"Category: {category}\n")
+              f.write(f"Date: {datetime.now().strftime('%Y-%m-%d')}\n")
+              f.write(f"Total Rows: {total}\n")
+              f.write(f"Files Merged: {len(files)}\n\n")
+              for col in merged.columns:
+                  missing = merged[col].isna().sum() + (merged[col] == '').sum()
+                  pct = (missing / total) * 100 if total > 0 else 0
+                  f.write(f"{col}: {missing} empty ({pct:.2f}%)\n")
+
+          # Upload to R2
+          client = boto3.client(
+              's3',
+              endpoint_url=os.environ['CF_R2_ENDPOINT_URL'],
+              aws_access_key_id=os.environ['CF_R2_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['CF_R2_SECRET_ACCESS_KEY'],
+              region_name='auto'
+          )
+          dt = datetime.now()
+          key = f"qatarsale/{dt.year}/{dt.strftime('%B').lower()}/{dt.day}/{output_file}"
+          client.upload_file(
+              output_file, bucket := os.environ['CF_R2_BUCKET_NAME'], key,
+              ExtraArgs={'ContentType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
+          )
+          print(f"Uploaded to R2: {key}")
+          EOF
+
+      - name: Collect failed URLs for ${{ matrix.category }}
+        run: |
+          python << 'EOF'
+          import glob
+
+          category = "${{ matrix.category }}"
+          failed = []
+          for f in glob.glob('excel_parts/*_failed.txt'):
+              with open(f, 'r', encoding='utf-8') as file:
+                  for line in file:
+                      line = line.strip()
+                      if line.startswith('http'):
+                          failed.append(line)
+
+          with open(f'failed_urls_{category}.txt', 'w', encoding='utf-8') as f:
+              f.write(f'Category: {category}\n')
+              f.write(f'Total Failed URLs: {len(failed)}\n\n')
+              for u in failed:
+                  f.write(u + '\n')
+
+          print(f"Failed URLs for {category}: {len(failed)}")
+          EOF
+
+      - name: Commit summary
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add scrape_summary_${{ matrix.category }}.txt failed_urls_${{ matrix.category }}.txt
+          git diff --staged --quiet || git commit -m "scrape summary ${{ matrix.category }} $(date +'%Y-%m-%d')"
+          git push
+
+  scrape-multi:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        category:
+          - car_spare_parts_accessories-automotive_exterior_accessories
+          - heavy_equipments
+          - car_spare_parts_accessories
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install "scrapling[all]" openpyxl
+          playwright install chromium
+          playwright install-deps chromium
+          python -m patchright install chromium
+
+      - name: Run multi-category scraper
+        env:
+          CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+          CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+        run: |
+          python -u main.py ${{ matrix.category }}
+
+      - name: Upload Excel to R2
+        env:
+          CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+          CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+        run: |
+          python << 'EOF'
+          import boto3, os
+          from datetime import datetime
+
+          category = "${{ matrix.category }}"
+          excel_file = f"{category}.xlsx"
+
+          if not os.path.exists(excel_file):
+              print(f"No Excel file found: {excel_file}")
+              exit(1)
+
+          client = boto3.client(
+              's3',
+              endpoint_url=os.environ['CF_R2_ENDPOINT_URL'],
+              aws_access_key_id=os.environ['CF_R2_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['CF_R2_SECRET_ACCESS_KEY'],
+              region_name='auto'
+          )
+
+          dt = datetime.now()
+          key = f"qatarsale/{dt.year}/{dt.strftime('%B').lower()}/{dt.day}/{excel_file}"
+          bucket = os.environ['CF_R2_BUCKET_NAME']
+
+          client.upload_file(
+              excel_file, bucket, key,
+              ExtraArgs={'ContentType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
+          )
+          print(f"Uploaded to R2: {key}")
+          EOF
