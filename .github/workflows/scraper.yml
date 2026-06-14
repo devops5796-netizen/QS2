@@ -6,34 +6,108 @@ on:
   workflow_dispatch:
 
 jobs:
+  detect_pages:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build_matrix.outputs.matrix }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install "scrapling[all]"
+          playwright install chromium
+          playwright install-deps chromium
+          python -m patchright install chromium
+
+      - name: Detect pages and build matrix
+        id: build_matrix
+        run: |
+          python << 'EOF'
+          import json
+          import os
+          from scrapling import StealthyFetcher
+
+          CATEGORIES = {
+              "cars_for_rent":                 "https://qatarsale.com/ar/products/cars_for_rent?basic_search:StatusFilter=0",
+              "special_numbers-plate_numbers": "https://qatarsale.com/ar/products/special_numbers-plate_numbers?basic_search:StatusFilter=0",
+              "bikes":                         "https://qatarsale.com/ar/products/bikes?basic_search:StatusFilter=0",
+              "caravan":                       "https://qatarsale.com/ar/products/caravan?basic_search:StatusFilter=0",
+          }
+
+          JOBS_PER_CATEGORY = {
+              "cars_for_rent":                 5,
+              "special_numbers-plate_numbers": 5,
+              "bikes":                         2,
+              "caravan":                       2,
+          }
+
+          def get_last_page(url: str) -> int:
+              page = StealthyFetcher.fetch(url, headless=True, network_idle=True, timeout=30000)
+              pagination_els = page.find_all("[data-testid='at-pagination-page-number']")
+              if pagination_els:
+                  numbers = []
+                  for el in pagination_els:
+                      try:
+                          numbers.append(int(el.text.strip()))
+                      except ValueError:
+                          pass
+                  if numbers:
+                      return max(numbers)
+              last_el = page.find("[data-testid='at-pagination-last-page']")
+              if last_el:
+                  try:
+                      return int(last_el.text.strip())
+                  except ValueError:
+                      pass
+              return 1
+
+          matrix = {"include": []}
+
+          for category, url in CATEGORIES.items():
+              print(f"Detecting pages for {category}...")
+              try:
+                  last_page = get_last_page(url)
+              except Exception as e:
+                  print(f"Failed to detect pages for {category}: {e}")
+                  last_page = 1
+
+              print(f"  {category}: {last_page} pages")
+
+              n_jobs = JOBS_PER_CATEGORY.get(category, 2)
+              pages_per_job = max(1, last_page // n_jobs)
+
+              for i in range(n_jobs):
+                  start = i * pages_per_job + 1
+                  end   = (i + 1) * pages_per_job if i < n_jobs - 1 else last_page
+                  if start > last_page:
+                      break
+                  matrix["include"].append({
+                      "category": category,
+                      "start":    start,
+                      "end":      end
+                  })
+
+          print(f"Matrix: {json.dumps(matrix, indent=2)}")
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"matrix={json.dumps(matrix)}\n")
+          EOF
+        env:
+          PYTHONUNBUFFERED: "1"
+
   scrape:
     runs-on: ubuntu-latest
-
+    needs: detect_pages
     strategy:
-      matrix:
-        include:
-          # cars_for_rent — 75 pages / 5 jobs
-          - {category: cars_for_rent, start: 1,  end: 15}
-          - {category: cars_for_rent, start: 16, end: 30}
-          - {category: cars_for_rent, start: 31, end: 45}
-          - {category: cars_for_rent, start: 46, end: 60}
-          - {category: cars_for_rent, start: 61, end: 75}
-
-          # special_numbers — 105 pages / 5 jobs
-          - {category: special_numbers-plate_numbers, start: 1,  end: 21}
-          - {category: special_numbers-plate_numbers, start: 22, end: 42}
-          - {category: special_numbers-plate_numbers, start: 43, end: 63}
-          - {category: special_numbers-plate_numbers, start: 64, end: 84}
-          - {category: special_numbers-plate_numbers, start: 85, end: 105}
-
-          # bikes — 20 pages / 2 jobs
-          - {category: bikes, start: 1,  end: 10}
-          - {category: bikes, start: 11, end: 20}
-
-          # caravan — 5 pages / 2 jobs
-          - {category: caravan, start: 1, end: 3}
-          - {category: caravan, start: 4, end: 5}
-
+      matrix: ${{ fromJson(needs.detect_pages.outputs.matrix) }}
       fail-fast: false
 
     steps:
@@ -137,7 +211,6 @@ jobs:
           total = len(merged)
           print(f"Category: {category} | Rows: {total} | Files merged: {len(files)}")
 
-          # Summary
           summary_file = f"scrape_summary_{category}.txt"
           with open(summary_file, 'w') as f:
               f.write(f"Category: {category}\n")
@@ -149,7 +222,6 @@ jobs:
                   pct = (missing / total) * 100 if total > 0 else 0
                   f.write(f"{col}: {missing} empty ({pct:.2f}%)\n")
 
-          # Upload to R2
           client = boto3.client(
               's3',
               endpoint_url=os.environ['CF_R2_ENDPOINT_URL'],
@@ -166,7 +238,7 @@ jobs:
           print(f"Uploaded to R2: {key}")
           EOF
 
-      - name: Collect failed URLs for ${{ matrix.category }}
+      - name: Collect failed URLs
         run: |
           python << 'EOF'
           import glob

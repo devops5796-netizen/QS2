@@ -116,7 +116,6 @@ def main():
             run_multi_category(category)
         else:
             print(f"Unknown category: {category}")
-            print(f"Available multi-categories: {list(MULTI_CATEGORIES.keys())}")
             sys.exit(1)
 
     else:
