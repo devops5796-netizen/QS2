@@ -265,9 +265,11 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git stash
+          git pull --rebase origin main
+          git stash pop
           git add scrape_summary_${{ matrix.category }}.txt failed_urls_${{ matrix.category }}.txt
           git diff --staged --quiet || (
-            git pull --rebase origin main &&
             git commit -m "scrape summary ${{ matrix.category }} $(date +'%Y-%m-%d')" &&
             git push
           )
