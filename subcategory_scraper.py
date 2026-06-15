@@ -43,33 +43,25 @@ def get_subcategories(parent_url: str) -> list[dict]:
 
 
 def get_last_page(url: str) -> int:
-    """
-    Fetches the category page and finds the last page number.
-    """
     page = StealthyFetcher.fetch(
         f"{url}&page=1",
         headless=True, network_idle=True, timeout=30000
     )
     
-    # Try pagination elements
-    pagination_els = page.find_all("[data-testid='at-pagination-page-number']")
-    if pagination_els:
-        numbers = []
-        for el in pagination_els:
+    # Get all page number buttons and extract from href
+    numbers = []
+    pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
+    for el in pagination_els:
+        # Extract page number from href attribute
+        href = el.find("a").attrib.get("href", "") if el.find("a") else ""
+        if "page=" in href:
             try:
-                numbers.append(int(el.text.strip()))
+                num = int(href.split("page=")[-1])
+                numbers.append(num)
             except ValueError:
                 pass
-        if numbers:
-            return max(numbers)
     
-    # Fallback: look for last page button
-    last_el = page.find("[data-testid='at-pagination-last-page']")
-    if last_el:
-        try:
-            return int(last_el.text.strip())
-        except ValueError:
-            pass
+    if numbers:
+        return max(numbers)
     
-    # If only 1 page
     return 1

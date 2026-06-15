@@ -53,22 +53,23 @@ jobs:
 
           def get_last_page(url: str) -> int:
               page = StealthyFetcher.fetch(url, headless=True, network_idle=True, timeout=30000)
-              pagination_els = page.find_all("[data-testid='at-pagination-page-number']")
-              if pagination_els:
-                  numbers = []
-                  for el in pagination_els:
+              
+              numbers = []
+              pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
+              for el in pagination_els:
+                  a = el.find("a")
+                  if not a:
+                      continue
+                  href = a.attrib.get("href", "")
+                  if "page=" in href:
                       try:
-                          numbers.append(int(el.text.strip()))
+                          num = int(href.split("page=")[-1])
+                          numbers.append(num)
                       except ValueError:
                           pass
-                  if numbers:
-                      return max(numbers)
-              last_el = page.find("[data-testid='at-pagination-last-page']")
-              if last_el:
-                  try:
-                      return int(last_el.text.strip())
-                  except ValueError:
-                      pass
+              
+              if numbers:
+                  return max(numbers)
               return 1
 
           matrix = {"include": []}
