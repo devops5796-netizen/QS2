@@ -17,16 +17,18 @@ CATEGORIES = {
     "bikes":
         "https://qatarsale.com/ar/products/bikes?basic_search:StatusFilter=0",
     "caravan":
-        "https://qatarsale.com/ar/products/caravan?basic_search:StatusFilter=0",
+        "https://qatarsale.com/ar/products/caravan?basic_search:StatusFilter=0"
 }
 
 MULTI_CATEGORIES = {
     "car_spare_parts_accessories-automotive_exterior_accessories":
-        "https://qatarsale.com/ar/products/car_spare_parts_accessories-automotive_exterior_accessories",
+        "https://qatarsale.com/ar/products/car_spare_parts_accessories-automotive_exterior_accessories?basic_search:StatusFilter=0",
     "heavy_equipments":
-        "https://qatarsale.com/ar/products/heavy_equipments",
+        "https://qatarsale.com/ar/products/heavy_equipments?basic_search:StatusFilter=0",
     "car_spare_parts_accessories":
-        "https://qatarsale.com/ar/products/car_spare_parts_accessories",
+        "https://qatarsale.com/ar/products/car_spare_parts_accessories?basic_search:StatusFilter=0",
+    "property":
+        "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
 }
 
 
