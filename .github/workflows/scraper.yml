@@ -132,20 +132,23 @@ jobs:
 
           MULTI_CATEGORIES = {
               "car_spare_parts_accessories-automotive_exterior_accessories":
-                  "https://qatarsale.com/ar/products/car_spare_parts_accessories-automotive_exterior_accessories",
+                  "https://qatarsale.com/ar/products/car_spare_parts_accessories-automotive_exterior_accessories?basic_search:StatusFilter=0",
               "heavy_equipments":
-                  "https://qatarsale.com/ar/products/heavy_equipments",
+                  "https://qatarsale.com/ar/products/heavy_equipments?basic_search:StatusFilter=0",
               "car_spare_parts_accessories":
-                  "https://qatarsale.com/ar/products/car_spare_parts_accessories",
+                  "https://qatarsale.com/ar/products/car_spare_parts_accessories?basic_search:StatusFilter=0",
+              "jewellery":
+                  "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
               "property":
-                  "https://qatarsale.com/ar/products/property",
+                  "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0"
           }
 
           JOBS_PER_CATEGORY = {
               "car_spare_parts_accessories-automotive_exterior_accessories": 3,
               "heavy_equipments":                                            3,
-              "car_spare_parts_accessories":                                 3,
-              "property":                                                    3,
+              "car_spare_parts_accessories":                                 5,
+              "jewellery":                                                   3,
+              "property":                                                    10,
           }
 
           def get_subcategories(base_url: str) -> list:
@@ -468,6 +471,7 @@ jobs:
           - car_spare_parts_accessories-automotive_exterior_accessories
           - heavy_equipments
           - car_spare_parts_accessories
+          - jewellery
           - property
 
     steps:

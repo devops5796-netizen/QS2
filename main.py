@@ -27,8 +27,11 @@ MULTI_CATEGORIES = {
         "https://qatarsale.com/ar/products/heavy_equipments?basic_search:StatusFilter=0",
     "car_spare_parts_accessories":
         "https://qatarsale.com/ar/products/car_spare_parts_accessories?basic_search:StatusFilter=0",
+    "jewellery":
+        "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
     "property":
-        "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
+         "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
+
 }
 
 
