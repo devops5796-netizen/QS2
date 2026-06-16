@@ -143,12 +143,12 @@ jobs:
                   "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0"
           }
 
-          JOBS_PER_CATEGORY = {
-              "car_spare_parts_accessories-automotive_exterior_accessories": 3,
-              "heavy_equipments":                                            3,
-              "car_spare_parts_accessories":                                 5,
-              "jewellery":                                                   3,
-              "property":                                                    10,
+          PAGES_PER_JOB = {
+              "car_spare_parts_accessories-automotive_exterior_accessories": 10,
+              "heavy_equipments":            10,
+              "car_spare_parts_accessories": 10,
+              "jewellery":                   5,
+              "property":                    15,
           }
 
           def get_subcategories(base_url: str) -> list:
@@ -170,6 +170,25 @@ jobs:
                   subcats.append({"name": name, "slug": slug, "url": full_url})
               return subcats
 
+          def get_last_page(url: str) -> int:
+              page = StealthyFetcher.fetch(
+                  f"{url}&page=1",
+                  headless=True, network_idle=True, timeout=30000
+              )
+              numbers = []
+              pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
+              for el in pagination_els:
+                  a = el.find("a")
+                  if not a:
+                      continue
+                  href = a.attrib.get("href", "")
+                  if "page=" in href:
+                      try:
+                          numbers.append(int(href.split("page=")[-1]))
+                      except ValueError:
+                          pass
+              return max(numbers) if numbers else 1
+
           matrix = {"include": []}
 
           for category, base_url in MULTI_CATEGORIES.items():
@@ -177,26 +196,39 @@ jobs:
               try:
                   subcats = get_subcategories(base_url)
               except Exception as e:
-                  print(f"Failed: {e}")
+                  print(f"Failed to get subcats for {category}: {e}")
                   continue
 
               print(f"  Found {len(subcats)} sub-categories")
+              pages_per_job = PAGES_PER_JOB.get(category, 10)
 
-              n_jobs = JOBS_PER_CATEGORY.get(category, 3)
-              pages_per_job = max(1, len(subcats) // n_jobs)
+              for subcat in subcats:
+                  name = subcat["name"]
+                  slug = subcat["slug"]
+                  url  = subcat["url"] + "?basic_search:StatusFilter=0"
 
-              for i in range(n_jobs):
-                  start_idx = i * pages_per_job
-                  end_idx   = (i + 1) * pages_per_job if i < n_jobs - 1 else len(subcats)
-                  if start_idx >= len(subcats):
-                      break
-                  job_subcats = subcats[start_idx:end_idx]
-                  matrix["include"].append({
-                      "category": category,
-                      "job_idx":  i,
-                      "subcats":  json.dumps(job_subcats, ensure_ascii=False)
-                  })
+                  print(f"  Detecting pages for {name}...")
+                  try:
+                      last_page = get_last_page(url)
+                  except Exception as e:
+                      print(f"  Failed: {e}")
+                      last_page = 1
 
+                  print(f"    {name}: {last_page} pages")
+
+                  for i in range(0, last_page, pages_per_job):
+                      start = i + 1
+                      end   = min(i + pages_per_job, last_page)
+                      matrix["include"].append({
+                          "category":    category,
+                          "subcat_name": name,
+                          "subcat_slug": slug,
+                          "subcat_url":  url,
+                          "start":       start,
+                          "end":         end,
+                      })
+
+          print(f"Total jobs: {len(matrix['include'])}")
           print(f"Matrix: {json.dumps(matrix, indent=2, ensure_ascii=False)}")
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -284,63 +316,28 @@ jobs:
           playwright install-deps chromium
           python -m patchright install chromium
 
-      - name: Run scraper for sub-categories
+      - name: Run scraper for sub-category pages
         env:
           CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
           CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
           CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
           CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
-          SUBCATS: ${{ matrix.subcats }}
-          CATEGORY: ${{ matrix.category }}
-          JOB_IDX: ${{ matrix.job_idx }}
         run: |
-          python << 'EOF'
-          import json
-          import os
-          import sys
-          sys.path.insert(0, '.')
-          import links_scraper
-          import products_scraper
-          import flatten
-          import excel_writer
-          import subcategory_scraper
-
-          category = os.environ['CATEGORY']
-          job_idx  = os.environ['JOB_IDX']
-          subcats  = json.loads(os.environ['SUBCATS'])
-
-          sheets = {}
-
-          for subcat in subcats:
-              name = subcat["name"]
-              slug = subcat["slug"]
-              url  = subcat["url"] + "?basic_search:StatusFilter=0"
-
-              print(f"\n{'='*50}")
-              print(f"Sub-category: {name} ({slug})")
-              print(f"{'='*50}")
-
-              last_page = subcategory_scraper.get_last_page(url)
-              print(f"Pages: 1 to {last_page}")
-
-              links_csv     = f"links_{category}_{slug}.csv"
-              products_json = f"products_{category}_{slug}.jsonl"
-
-              links_scraper.run(url, 1, last_page, links_csv)
-              products_scraper.run(links_csv, products_json, workers=4)
-              result = flatten.run(products_json)
-              sheets[name] = result["df"]
-
-          output_excel = f"{category}_{job_idx}.xlsx"
-          excel_writer.write(sheets, output_excel)
-          print(f"Saved: {output_excel}")
-          EOF
+          python -u main.py \
+            "${{ matrix.category }}" \
+            "${{ matrix.subcat_slug }}" \
+            ${{ matrix.start }} \
+            ${{ matrix.end }} \
+            "${{ matrix.subcat_url }}" \
+            "${{ matrix.subcat_name }}"
 
       - name: Upload Excel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: multi-excel-${{ matrix.category }}-${{ matrix.job_idx }}
-          path: ${{ matrix.category }}_${{ matrix.job_idx }}.xlsx
+          name: multi-excel-${{ matrix.category }}-${{ matrix.subcat_slug }}-${{ matrix.start }}-${{ matrix.end }}
+          path: |
+            ${{ matrix.category }}_${{ matrix.subcat_slug }}_${{ matrix.start }}_${{ matrix.end }}.xlsx
+            products_${{ matrix.category }}_${{ matrix.subcat_slug }}_${{ matrix.start }}_${{ matrix.end }}_failed.txt
 
   merge:
     runs-on: ubuntu-latest

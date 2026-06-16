@@ -99,13 +99,42 @@ def run_multi_category(category: str):
     print(f"\nDONE: {len(subcats)} sub-categories | {int(elapsed//60)}m {int(elapsed%60)}s")
     return output_excel
 
+def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subcat_url: str, subcat_name: str):
+    links_csv     = f"links_{category}_{subcat_slug}_{start}_{end}.csv"
+    products_json = f"products_{category}_{subcat_slug}_{start}_{end}.jsonl"
+    output_excel  = f"{category}_{subcat_slug}_{start}_{end}.xlsx"
+
+    elapsed_start = time.time()
+    print(f"QatarSale Scraper - Sub-Category Pages")
+    print(f"Category: {category} | Sub-cat: {subcat_name} | Pages: {start} to {end}")
+
+    s1 = links_scraper.run(subcat_url, start, end, links_csv)
+    s2 = products_scraper.run(links_csv, products_json, workers=4)
+    s3 = flatten.run(products_json)
+
+    df = s3["df"]
+    excel_writer.write_single(df, subcat_name[:31], output_excel)
+
+    elapsed = time.time() - elapsed_start
+    print(f"\nDONE: {s1['total_links']} links | {s2['success']} scraped | {int(elapsed//60)}m {int(elapsed%60)}s")
+    return output_excel
+
 
 def main():
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 7:
+        # Sub-category pages mode
+        category    = sys.argv[1]
+        subcat_slug = sys.argv[2]
+        start       = int(sys.argv[3])
+        end         = int(sys.argv[4])
+        subcat_url  = sys.argv[5]
+        subcat_name = sys.argv[6]
+        run_subcat_pages(category, subcat_slug, start, end, subcat_url, subcat_name)
+
+    elif len(sys.argv) == 4:
         category = sys.argv[1]
         start    = int(sys.argv[2])
         end      = int(sys.argv[3])
-
         if category in CATEGORIES:
             run_single_category(category, start, end)
         elif category in MULTI_CATEGORIES:
@@ -127,6 +156,7 @@ def main():
         print("Usage:")
         print("  python main.py <category> <start_page> <end_page>")
         print("  python main.py <multi_category>")
+        print("  python main.py <category> <subcat_slug> <start> <end> <subcat_url> <subcat_name>")
         sys.exit(1)
 
 
