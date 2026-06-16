@@ -3,6 +3,7 @@ import mimetypes
 from pathlib import Path
 from datetime import datetime
 import boto3
+import io
 
 CF_R2_ACCESS_KEY = os.getenv('CF_R2_ACCESS_KEY_ID')
 CF_R2_SECRET_KEY = os.getenv('CF_R2_SECRET_ACCESS_KEY')
@@ -75,27 +76,51 @@ def upload_single_file(
         print(f"  [ERROR] R2 upload failed for {filename}: {e}")
         return False
 
+def upload_buffer(
+    buffer: io.BytesIO,
+    filename: str,
+    folder_name: str = "qatarsale",
+    file_type: str = "images",
+    content_type: str = "image/webp",
+    dt: datetime = None
+) -> str | None:
+    client = R2_CLIENT_INSTANCE if R2_CLIENT_INSTANCE else get_r2_client()
+    if not client or not BUCKET_NAME:
+        return None
 
-def upload_final_batch_assets(images_folder: str, final_excel: str, folder_name: str = "qatarsale") -> dict:
+    r2_key = build_r2_key(folder_name, file_type, filename, dt)
+
+    try:
+        buffer.seek(0)
+        client.upload_fileobj(
+            buffer, BUCKET_NAME, r2_key,
+            ExtraArgs={"ContentType": content_type}
+        )
+        return r2_key
+    except Exception as e:
+        print(f"  [ERROR] R2 upload failed for {filename}: {e}")
+        return None
+
+def upload_final_batch_assets(images_folder: str, final_csv: str, folder_name: str = "qatarsale") -> dict:
     print("\n" + "="*50)
-    print("STEP 4: Uploading final Excel artifact to Cloudflare R2...")
+    print("STEP 4: Uploading final CSV artifact to Cloudflare R2...")
     print("="*50)
 
     uploaded = 0
     failed = 0
     dt = datetime.now()
 
-    if os.path.exists(final_excel):
-        print(f"Found final Excel file '{final_excel}', starting upload...")
-        success = upload_single_file(final_excel, folder_name=folder_name, file_type="", dt=dt)
+    if os.path.exists(final_csv):
+        print(f"Found final flat CSV file '{final_csv}', starting upload...")
+        success = upload_single_file(final_csv, folder_name=folder_name, file_type="", dt=dt)
         if success:
             uploaded += 1
-            print("-> Final Excel Artifact Uploaded successfully to R2!")
+            print("-> Final CSV Artifact Uploaded successfully to R2!")
         else:
             failed += 1
-            print("-> [ERROR] Failed to upload final Excel to R2.")
+            print("-> [ERROR] Failed to upload final CSV to R2.")
     else:
-        print(f"-> [WARNING] Excel Artifact NOT found at: {final_excel}")
+        print(f"-> [WARNING] CSV Artifact NOT found at: {final_csv}")
         failed += 1
 
     return {"uploaded": uploaded, "failed": failed}

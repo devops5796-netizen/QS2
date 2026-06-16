@@ -1,25 +1,8 @@
 import json
 from scrapling import StealthyFetcher
 
-def get_last_page(url: str) -> int:
-    page = StealthyFetcher.fetch(url, headless=True, network_idle=True, timeout=30000)
-    numbers = []
-    pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
-    for el in pagination_els:
-        a = el.find("a")
-        if not a:
-            continue
-        href = a.attrib.get("href", "")
-        if "page=" in href:
-            try:
-                numbers.append(int(href.split("page=")[-1]))
-            except ValueError:
-                pass
-    return max(numbers) if numbers else 1
-
-
 def get_subcategories(base_url: str) -> list:
-    page = StealthyFetcher.fetch(base_url, headless=True, network_idle=True, timeout=30000)
+    page = StealthyFetcher.fetch(base_url, headless=True, network_idle=True, timeout=90000)
     subcats = []
     links = page.find_all("[data-testid^='at-sub-category-']")
     for link in links:
@@ -43,7 +26,7 @@ def analyze_category_with_products(url: str):
         f"{url}&page=1",
         headless=True,
         network_idle=True,
-        timeout=30000
+        timeout=90000
     )
 
     # 1. check if products exist
