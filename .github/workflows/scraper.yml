@@ -113,6 +113,7 @@ jobs:
           python << 'EOF'
           import json
           import os
+          import time
           from scrapling import StealthyFetcher
           from detect_utils import get_subcategories, analyze_category_with_products
 
@@ -142,7 +143,19 @@ jobs:
           for category, base_url in MULTI_CATEGORIES.items():
               print(f"Detecting sub-categories for {category}...")
               try:
-                  subcats = get_subcategories(base_url)
+                  for attempt in range(3):
+                      try:
+                          subcats = get_subcategories(base_url)
+                          if subcats:
+                              break
+                          print(f"  Attempt {attempt+1}: No sub-categories found, retrying...")
+                          time.sleep(2)
+                      except Exception as e:
+                          print(f"  Attempt {attempt+1} failed: {e}")
+                          time.sleep(2)
+                  else:
+                      print(f"  Failed to get subcats for {category} after 3 attempts")
+                      continue
               except Exception as e:
                   print(f"Failed to get subcats for {category}: {e}")
                   continue
