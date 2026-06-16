@@ -8,7 +8,7 @@ def run(products_json: str, output_excel: str = None) -> dict:
     print("="*50)
 
     if not os.path.exists(products_json):
-        print(f"ERROR: '{products_json}' not found!")
+        print(f"No products file found ({products_json}).")
         return {"rows": 0, "columns": 0, "df": pd.DataFrame()}
 
     rows = []

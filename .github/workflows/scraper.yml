@@ -36,6 +36,7 @@ jobs:
           import json
           import os
           from scrapling import StealthyFetcher
+          from detect_utils import get_last_page
 
           CATEGORIES = {
               "cars_for_rent":                 "https://qatarsale.com/ar/products/cars_for_rent?basic_search:StatusFilter=0",
@@ -50,22 +51,6 @@ jobs:
               "bikes":                         2,
               "caravan":                       2,
           }
-
-          def get_last_page(url: str) -> int:
-              page = StealthyFetcher.fetch(url, headless=True, network_idle=True, timeout=30000)
-              numbers = []
-              pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
-              for el in pagination_els:
-                  a = el.find("a")
-                  if not a:
-                      continue
-                  href = a.attrib.get("href", "")
-                  if "page=" in href:
-                      try:
-                          numbers.append(int(href.split("page=")[-1]))
-                      except ValueError:
-                          pass
-              return max(numbers) if numbers else 1
 
           matrix = {"include": []}
 
@@ -129,6 +114,7 @@ jobs:
           import json
           import os
           from scrapling import StealthyFetcher
+          from detect_utils import get_subcategories, analyze_category_with_products
 
           MULTI_CATEGORIES = {
               "car_spare_parts_accessories-automotive_exterior_accessories":
@@ -151,44 +137,6 @@ jobs:
               "property":                    15,
           }
 
-          def get_subcategories(base_url: str) -> list:
-              page = StealthyFetcher.fetch(base_url, headless=True, network_idle=True, timeout=30000)
-              subcats = []
-              links = page.find_all("[data-testid^='at-sub-category-']")
-              for link in links:
-                  testid = link.attrib.get("data-testid", "")
-                  idx = testid.replace("at-sub-category-", "")
-                  if idx == "0":
-                      continue
-                  href = link.attrib.get("href", "").strip()
-                  if not href:
-                      continue
-                  name_el = link.find("p")
-                  name = name_el.text.strip() if name_el else href.split("-")[-1]
-                  full_url = f"https://qatarsale.com{href}" if href.startswith("/") else href
-                  slug = href.rstrip("/").split("-")[-1]
-                  subcats.append({"name": name, "slug": slug, "url": full_url})
-              return subcats
-
-          def get_last_page(url: str) -> int:
-              page = StealthyFetcher.fetch(
-                  f"{url}&page=1",
-                  headless=True, network_idle=True, timeout=30000
-              )
-              numbers = []
-              pagination_els = page.find_all("[data-testid^='at-paginator-page-']")
-              for el in pagination_els:
-                  a = el.find("a")
-                  if not a:
-                      continue
-                  href = a.attrib.get("href", "")
-                  if "page=" in href:
-                      try:
-                          numbers.append(int(href.split("page=")[-1]))
-                      except ValueError:
-                          pass
-              return max(numbers) if numbers else 1
-
           matrix = {"include": []}
 
           for category, base_url in MULTI_CATEGORIES.items():
@@ -209,10 +157,14 @@ jobs:
 
                   print(f"  Detecting pages for {name}...")
                   try:
-                      last_page = get_last_page(url)
+                      last_page, has_products = analyze_category_with_products(url)
                   except Exception as e:
                       print(f"  Failed: {e}")
-                      last_page = 1
+                      continue  
+
+                  if not has_products:
+                      print(f"    ⚠️ No products in {name}, skipping...")
+                      continue
 
                   print(f"    {name}: {last_page} pages")
 
@@ -283,6 +235,7 @@ jobs:
           path: |
             ${{ matrix.category }}_${{ matrix.start }}_${{ matrix.end }}.xlsx
             products_${{ matrix.category }}_${{ matrix.start }}_${{ matrix.end }}_failed.txt
+          if-no-files-found: ignore
 
   scrape_subcats:
     runs-on: ubuntu-latest
@@ -338,7 +291,7 @@ jobs:
           path: |
             ${{ matrix.category }}_${{ matrix.subcat_slug }}_${{ matrix.start }}_${{ matrix.end }}.xlsx
             products_${{ matrix.category }}_${{ matrix.subcat_slug }}_${{ matrix.start }}_${{ matrix.end }}_failed.txt
-
+          
   merge:
     runs-on: ubuntu-latest
     needs: scrape

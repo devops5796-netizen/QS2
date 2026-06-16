@@ -4,7 +4,7 @@ import pandas as pd
 import links_scraper
 import products_scraper
 import flatten
-import subcategory_scraper
+from detect_utils import analyze_category_with_products, get_subcategories
 import excel_writer
 from dotenv import load_dotenv
 load_dotenv()
@@ -65,7 +65,7 @@ def run_multi_category(category: str):
     print("QatarSale Scraper - Multi Sub-Category")
     print(f"Category: {category}")
 
-    subcats = subcategory_scraper.get_subcategories(base_url)
+    subcats = get_subcategories(base_url)
     if not subcats:
         print("No sub-categories found!")
         return
@@ -81,7 +81,10 @@ def run_multi_category(category: str):
         print(f"Sub-category: {name} ({slug})")
         print(f"{'='*50}")
 
-        last_page     = subcategory_scraper.get_last_page(url)
+        last_page, has_products     = analyze_category_with_products(url)
+        if not has_products:
+            print(f"⚠️ No products found in {name}, skipping...")
+            continue 
         print(f"Pages: 1 to {last_page}")
 
         links_csv     = f"links_{category}_{slug}.csv"
@@ -100,6 +103,11 @@ def run_multi_category(category: str):
     return output_excel
 
 def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subcat_url: str, subcat_name: str):
+    last_page, has_products = analyze_category_with_products(subcat_url)
+    if not has_products:
+        print(f"⚠️ No products found in '{subcat_name}' — skipping entirely.")
+        return None
+    
     links_csv     = f"links_{category}_{subcat_slug}_{start}_{end}.csv"
     products_json = f"products_{category}_{subcat_slug}_{start}_{end}.jsonl"
     output_excel  = f"{category}_{subcat_slug}_{start}_{end}.xlsx"
@@ -109,7 +117,13 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
     print(f"Category: {category} | Sub-cat: {subcat_name} | Pages: {start} to {end}")
 
     s1 = links_scraper.run(subcat_url, start, end, links_csv)
+    if s1['total_links'] == 0:
+        print(f"⚠️ No links found for '{subcat_name}' — skipping.")
+        return None
     s2 = products_scraper.run(links_csv, products_json, workers=4)
+    if s2['success'] == 0:
+        print(f"⚠️ No products scraped for '{subcat_name}' — skipping.")
+        return None
     s3 = flatten.run(products_json)
 
     df = s3["df"]
