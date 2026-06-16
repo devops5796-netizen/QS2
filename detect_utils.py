@@ -47,12 +47,13 @@ def analyze_category_with_products(url: str):
     )
 
     # 1. check if products exist
-    product_cards = page.find_all(
-        "[data-testid*='product'], .product-card, .item-card"
-    )
-
+    product_cards = page.find_all("qs-product-card-v2")
     if not product_cards:
-        return 0, False  # (last_page, has_products)
+        product_cards = page.find_all("qs-product-card-classic")
+    
+    # If no product cards at all → no products
+    if not product_cards:
+        return 0, False
 
     # 2. extract pagination
     numbers = []
