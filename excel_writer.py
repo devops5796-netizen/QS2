@@ -2,11 +2,8 @@ import pandas as pd
 import os
 
 def write(sheets: dict, output_path: str) -> None:
-    """
-    sheets: {"sheet_name": df, ...}
-    """
-    if df is None or df.empty:
-        print("Empty dataframe, no Excel created.")
+    if not sheets:
+        print("Empty sheets, no Excel created.")
         return
     with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
         for sheet_name, df in sheets.items():
