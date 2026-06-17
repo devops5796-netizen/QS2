@@ -28,7 +28,27 @@ MULTI_CATEGORIES = {
     "wrist_watches":
         "https://qatarsale.com/ar/products/wrist_watches?basic_search:StatusFilter=0",
     "home_security_surveillance_systems":
-        "https://qatarsale.com/ar/products/home_security_surveillance_systems?basic_search:StatusFilter=0"
+        "https://qatarsale.com/ar/products/home_security_surveillance_systems?basic_search:StatusFilter=0",
+    "health_beauty":
+        "https://qatarsale.com/ar/products/health_beauty?basic_search:StatusFilter=0",
+    "toys_games":
+        "https://qatarsale.com/ar/products/toys_games?basic_search:StatusFilter=0",
+    "kids":
+        "https://qatarsale.com/ar/products/kids?basic_search:StatusFilter=0",
+    "shoes_bags":
+        "https://qatarsale.com/ar/products/shoes_bags?basic_search:StatusFilter=0",
+    "arts_crafts_sewing":
+        "https://qatarsale.com/ar/products/arts_crafts_sewing?basic_search:StatusFilter=0",
+    "kitchen_dining_room":
+        "https://qatarsale.com/ar/products/kitchen_dining_room?basic_search:StatusFilter=0",
+    "education":
+        "https://qatarsale.com/ar/products/education?basic_search:StatusFilter=0",
+    "bikes_accessories":
+        "https://qatarsale.com/ar/products/bikes_accessories?basic_search:StatusFilter=0",
+    "clothes": 
+        "https://qatarsale.com/ar/products/clothes?basic_search:StatusFilter=0",
+    "camping":
+        "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0"
 }
 
 
