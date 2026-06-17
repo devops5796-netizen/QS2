@@ -49,7 +49,7 @@ jobs:
               "jewellery":
                   "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
               "property":
-                  "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0"
+                  "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
               "watercrafts":
                   "https://qatarsale.com/ar/products/watercrafts?basic_search:StatusFilter=0",
               "computers_and_parts":    
