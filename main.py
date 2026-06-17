@@ -19,6 +19,16 @@ MULTI_CATEGORIES = {
         "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
     "property":
         "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
+    "watercrafts":
+        "https://qatarsale.com/ar/products/watercrafts?basic_search:StatusFilter=0",
+    "computers_and_parts":    
+        "https://qatarsale.com/ar/products/computers_and_parts?basic_search:StatusFilter=0",
+    "video_games":
+        "https://qatarsale.com/ar/products/video_games?basic_search:StatusFilter=0",
+    "wrist_watches":
+        "https://qatarsale.com/ar/products/wrist_watches?basic_search:StatusFilter=0",
+    "home_security_surveillance_systems":
+        "https://qatarsale.com/ar/products/home_security_surveillance_systems?basic_search:StatusFilter=0"
 }
 
 

@@ -1,4 +1,4 @@
-name: QatarSale Categories Scraper
+name: QatarSale Sub Categories Scraper
 
 on:
   schedule:
@@ -50,14 +50,29 @@ jobs:
                   "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
               "property":
                   "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0"
+              "watercrafts":
+                  "https://qatarsale.com/ar/products/watercrafts?basic_search:StatusFilter=0",
+              "computers_and_parts":    
+                  "https://qatarsale.com/ar/products/computers_and_parts?basic_search:StatusFilter=0",
+              "video_games":
+                  "https://qatarsale.com/ar/products/video_games?basic_search:StatusFilter=0",
+              "wrist_watches":
+                  "https://qatarsale.com/ar/products/wrist_watches?basic_search:StatusFilter=0",
+              "home_security_surveillance_systems":
+                  "https://qatarsale.com/ar/products/home_security_surveillance_systems?basic_search:StatusFilter=0"
           }
 
           PAGES_PER_JOB = {
               "car_spare_parts_accessories-automotive_exterior_accessories": 10,
-              "heavy_equipments":            10,
-              "car_spare_parts_accessories": 10,
-              "jewellery":                   5,
-              "property":                    15,
+              "heavy_equipments":                                     10,
+              "car_spare_parts_accessories":                          10,
+              "jewellery":                                             5,
+              "property":                                             15,
+              "watercrafts":                                           5,
+              "computers_and_parts":                                  10,
+              "video_games":                                           5,
+              "wrist_watches":                                         5,
+              "home_security_surveillance_systems":                    2
           }
 
           matrix = {"include": []}
@@ -191,6 +206,11 @@ jobs:
           - car_spare_parts_accessories
           - jewellery
           - property
+          - watercrafts
+          - computers_and_parts
+          - video_games
+          - wrist_watches
+          - home_security_surveillance_systems
 
     steps:
       - name: Checkout repo
