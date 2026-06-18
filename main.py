@@ -48,7 +48,13 @@ MULTI_CATEGORIES = {
     "clothes": 
         "https://qatarsale.com/ar/products/clothes?basic_search:StatusFilter=0",
     "camping":
-        "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0"
+        "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0",
+    "tools_home_improvement":
+        "https://qatarsale.com/ar/products/tools_home_improvement?basic_search:StatusFilter=0",
+    "men_accessories":
+        "https://qatarsale.com/ar/products/men_accessories?basic_search:StatusFilter=0",
+    "musical_instruments":
+        "https://qatarsale.com/ar/products/musical_instruments?basic_search:StatusFilter=0"
 }
 
 

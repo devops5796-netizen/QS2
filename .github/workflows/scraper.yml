@@ -79,7 +79,13 @@ jobs:
               "clothes": 
                   "https://qatarsale.com/ar/products/clothes?basic_search:StatusFilter=0",
               "camping":
-                  "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0"
+                  "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0",
+              "tools_home_improvement":
+                  "https://qatarsale.com/ar/products/tools_home_improvement?basic_search:StatusFilter=0",
+              "men_accessories":
+                  "https://qatarsale.com/ar/products/men_accessories?basic_search:StatusFilter=0",
+              "musical_instruments":
+                  "https://qatarsale.com/ar/products/musical_instruments?basic_search:StatusFilter=0"
           }
 
           PAGES_PER_JOB = {
@@ -102,7 +108,10 @@ jobs:
               "education":                                             1,
               "bikes_accessories":                                     1,
               "clothes":                                               1,
-              "camping":                                               1
+              "camping":                                               1,
+              "tools_home_improvement":                                1,
+              "men_accessories":                                       1,
+              "musical_instruments":                                   1
           }
 
           matrix = {"include": []}
@@ -251,6 +260,9 @@ jobs:
           - bikes_accessories
           - clothes
           - camping
+          - tools_home_improvement
+          - men_accessories
+          - musical_instruments
 
 
     steps:
