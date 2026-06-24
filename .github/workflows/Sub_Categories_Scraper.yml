@@ -1,8 +1,8 @@
 name: QatarSale Sub Categories Scraper
 
 on:
-  schedule:
-    - cron: '0 2 * * *'
+  repository_dispatch:
+    types: [users-done]
   workflow_dispatch:
 
 jobs:
@@ -385,5 +385,11 @@ jobs:
           EOF
 
 
-
+      - name: Trigger Jobs workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/devops5796-netizen/QS3/dispatches \
+            -d '{"event_type": "sub_categories-done"}'
 
