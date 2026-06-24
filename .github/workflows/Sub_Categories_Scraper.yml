@@ -385,7 +385,7 @@ jobs:
           EOF
 
 
-      - name: Trigger Jobs workflow
+      - name: Trigger Cars For Sale Monitor workflow
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
