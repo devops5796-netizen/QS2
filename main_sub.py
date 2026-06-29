@@ -5,6 +5,8 @@ import links_scraper
 import products_scraper
 import flatten
 import excel_writer
+from datetime import datetime, timezone, timedelta
+import pandas as pd
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -57,6 +59,24 @@ MULTI_CATEGORIES = {
         "https://qatarsale.com/ar/products/musical_instruments?basic_search:StatusFilter=0"
 }
 
+def filter_yesterday_links(links_csv: str, filtered_csv: str) -> dict:
+    df = pd.read_csv(links_csv)
+    
+    if "startDate" not in df.columns:
+        print("⚠️ No startDate column found, using all links")
+        df.to_csv(filtered_csv, index=False, encoding="utf-8")
+        return {"total": len(df), "yesterday": len(df)}
+
+    df["date_parsed"] = pd.to_datetime(df["startDate"], format="ISO8601", utc=True)
+    yesterday = datetime.now(timezone.utc).date() - timedelta(days=1)
+    mask = df["date_parsed"].dt.date == yesterday
+    df_yesterday = df[mask].drop(columns=["date_parsed"])
+
+    print(f"  Total links:     {len(df)}")
+    print(f"  Yesterday links: {len(df_yesterday)}")
+
+    df_yesterday.to_csv(filtered_csv, index=False, encoding="utf-8")
+    return {"total": len(df), "yesterday": len(df_yesterday)}
 
 def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subcat_url: str, subcat_name: str):
     last_page, has_products = analyze_category_with_products(subcat_url)
@@ -65,6 +85,7 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
         return None
 
     links_csv     = f"links_{category}_{subcat_slug}_{start}_{end}.csv"
+    filtered_csv  = f"links_yesterday_{category}_{subcat_slug}_{start}_{end}.csv"
     products_json = f"products_{category}_{subcat_slug}_{start}_{end}.jsonl"
     output_excel  = f"{category}_{subcat_slug}_{start}_{end}.xlsx"
 
@@ -76,7 +97,35 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
     if s1['total_links'] == 0:
         print(f"⚠️ No links found for '{subcat_name}' — skipping.")
         return None
+    
+    """
+    print("\n" + "="*50)
+    print("STEP 1.5: Filtering yesterday's links...")
+    print("="*50)
+    s_filter = filter_yesterday_links(links_csv, filtered_csv)
 
+    if s_filter["yesterday"] == 0:
+        print("\n" + "="*60)
+        print("No listings found for yesterday.")
+        print("Skipping product scraping and flattening.")
+        print("="*60)
+
+        elapsed = time.time() - elapsed_start
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+
+        print("\n" + "="*60)
+        print("FINAL SUMMARY")
+        print("="*60)
+        print(f"STEP 1   - Links:    {s1['links']['success']} pages OK | {s1['links']['failed']} failed | {s1['links']['total_links']} total")
+        print(f"STEP 1.5 - Filter:   0 yesterday / {s_filter['total']} total")
+        print("STEP 2   - Products: Skipped")
+        print("STEP 3   - Flatten:  Skipped")
+        print(f"Total Time: {minutes}m {seconds}s")
+        print("="*60)
+
+        return
+    """
     s2 = products_scraper.run(links_csv, products_json, workers=4, category=category)
     if s2['success'] == 0:
         print(f"⚠️ No products scraped for '{subcat_name}' — skipping.")

@@ -1,13 +1,16 @@
-name: QatarSale Sub Categories Scraper
+name: QatarSale Sub Sub Categories Scraper
 
 on:
-  repository_dispatch:
-    types: [users-done]
+  workflow_run:
+    workflows: ["QatarSale Sub Categories Scraper"]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
   detect_subcats:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     outputs:
       matrix: ${{ steps.build_matrix.outputs.matrix }}
 
@@ -40,78 +43,27 @@ jobs:
           from detect_utils import get_subcategories, analyze_category_with_products
 
           MULTI_CATEGORIES = {
-              "car_spare_parts_accessories-automotive_exterior_accessories":
-                  "https://qatarsale.com/ar/products/car_spare_parts_accessories-automotive_exterior_accessories?basic_search:StatusFilter=0",
-              "heavy_equipments":
-                  "https://qatarsale.com/ar/products/heavy_equipments?basic_search:StatusFilter=0",
-              "car_spare_parts_accessories":
-                  "https://qatarsale.com/ar/products/car_spare_parts_accessories?basic_search:StatusFilter=0",
-              "jewellery":
-                  "https://qatarsale.com/ar/products/jewellery?basic_search:StatusFilter=0",
-              "property":
-                  "https://qatarsale.com/ar/products/property?basic_search:StatusFilter=0",
-              "watercrafts":
-                  "https://qatarsale.com/ar/products/watercrafts?basic_search:StatusFilter=0",
-              "computers_and_parts":    
-                  "https://qatarsale.com/ar/products/computers_and_parts?basic_search:StatusFilter=0",
-              "video_games":
-                  "https://qatarsale.com/ar/products/video_games?basic_search:StatusFilter=0",
-              "wrist_watches":
-                  "https://qatarsale.com/ar/products/wrist_watches?basic_search:StatusFilter=0",
-              "home_security_surveillance_systems":
-                  "https://qatarsale.com/ar/products/home_security_surveillance_systems?basic_search:StatusFilter=0",
-              "health_beauty":
-                  "https://qatarsale.com/ar/products/health_beauty?basic_search:StatusFilter=0",
-              "toys_games":
-                  "https://qatarsale.com/ar/products/toys_games?basic_search:StatusFilter=0",
-              "kids":
-                  "https://qatarsale.com/ar/products/kids?basic_search:StatusFilter=0",
-              "shoes_bags":
-                  "https://qatarsale.com/ar/products/shoes_bags?basic_search:StatusFilter=0",
-              "arts_crafts_sewing":
-                  "https://qatarsale.com/ar/products/arts_crafts_sewing?basic_search:StatusFilter=0",
-              "kitchen_dining_room":
-                  "https://qatarsale.com/ar/products/kitchen_dining_room?basic_search:StatusFilter=0",
-              "education":
-                  "https://qatarsale.com/ar/products/education?basic_search:StatusFilter=0",
-              "bikes_accessories":
-                  "https://qatarsale.com/ar/products/bikes_accessories?basic_search:StatusFilter=0",
-              "clothes": 
-                  "https://qatarsale.com/ar/products/clothes?basic_search:StatusFilter=0",
-              "camping":
-                  "https://qatarsale.com/ar/products/camping?basic_search:StatusFilter=0",
-              "tools_home_improvement":
-                  "https://qatarsale.com/ar/products/tools_home_improvement?basic_search:StatusFilter=0",
-              "men_accessories":
-                  "https://qatarsale.com/ar/products/men_accessories?basic_search:StatusFilter=0",
-              "musical_instruments":
-                  "https://qatarsale.com/ar/products/musical_instruments?basic_search:StatusFilter=0"
+              "home_appliances":
+                  "https://qatarsale.com/ar/products/home_appliances?basic_search:StatusFilter=0",
+              "services":
+                  "https://qatarsale.com/ar/products/services?basic_search:StatusFilter=0",
+              "mobile_telephone_and_tablets":
+                  "https://qatarsale.com/ar/products/mobile_telephone_and_tablets?basic_search:StatusFilter=0",
+              "furniture_dcor":
+                  "https://qatarsale.com/ar/products/furniture_dcor?basic_search:StatusFilter=0",
+              "electronics":
+                  "https://qatarsale.com/ar/products/electronics?basic_search:StatusFilter=0",
+              "sportswear_equipment":
+                  "https://qatarsale.com/ar/products/sportswear_equipment?basic_search:StatusFilter=0"
           }
 
           PAGES_PER_JOB = {
-              "car_spare_parts_accessories-automotive_exterior_accessories": 20,
-              "heavy_equipments":                                      20,
-              "car_spare_parts_accessories":                           20,
-              "jewellery":                                             20,
-              "property":                                              20,
-              "watercrafts":                                           20,
-              "computers_and_parts":                                   20,
-              "video_games":                                           20,
-              "wrist_watches":                                         20,
-              "home_security_surveillance_systems":                    20,
-              "health_beauty":                                         20,
-              "toys_games":                                            20,
-              "kids":                                                  20,
-              "shoes_bags":                                            20,
-              "arts_crafts_sewing":                                    20,
-              "kitchen_dining_room":                                   20,
-              "education":                                             20,
-              "bikes_accessories":                                     20,
-              "clothes":                                               20,
-              "camping":                                               20,
-              "tools_home_improvement":                                20,
-              "men_accessories":                                       20,
-              "musical_instruments":                                   20
+              "home_appliances":                 20,
+              "services":                        20,
+              "mobile_telephone_and_tablets":    20,
+              "furniture_dcor":                  20,
+              "electronics":                     20,
+              "sportswear_equipment":            20
           }
 
           matrix = {"include": []}
@@ -215,7 +167,7 @@ jobs:
           CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
           CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
         run: |
-          python -u main_sub.py \
+          python -u main_sub_sub.py \
             "${{ matrix.category }}" \
             "${{ matrix.subcat_slug }}" \
             ${{ matrix.start }} \
@@ -238,30 +190,12 @@ jobs:
     strategy:
       matrix:
         category:
-          - car_spare_parts_accessories-automotive_exterior_accessories
-          - heavy_equipments
-          - car_spare_parts_accessories
-          - jewellery
-          - property
-          - watercrafts
-          - computers_and_parts
-          - video_games
-          - wrist_watches
-          - home_security_surveillance_systems
-          - health_beauty
-          - toys_games
-          - kids
-          - shoes_bags
-          - arts_crafts_sewing
-          - kitchen_dining_room
-          - education
-          - bikes_accessories
-          - clothes
-          - camping
-          - tools_home_improvement
-          - men_accessories
-          - musical_instruments
-
+          - home_appliances
+          - services
+          - mobile_telephone_and_tablets
+          - furniture_dcor
+          - electronics
+          - sportswear_equipment
 
     steps:
       - name: Checkout repo
@@ -334,7 +268,7 @@ jobs:
 
               print(f"Uploaded empty placeholder files for {category}")
               exit(0)
-          
+
           all_sheets = {}
           for f in files:
               xl = pd.ExcelFile(f)
@@ -357,7 +291,6 @@ jobs:
 
           print(f"Excel saved: {output_file}")
 
-          # Upload Excel
           result = upload_final_batch_assets(
               images_folder="",
               final_excel=output_file,
@@ -366,8 +299,17 @@ jobs:
           )
           print(f"Upload result: {result}")
 
-          # Generate + upload summary directly to R2
           dt = datetime.now()
+          client = boto3.client('s3',
+              endpoint_url=os.environ['CF_R2_ENDPOINT_URL'],
+              aws_access_key_id=os.environ['CF_R2_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['CF_R2_SECRET_ACCESS_KEY'],
+              region_name='auto'
+          )
+          bucket = os.environ['CF_R2_BUCKET_NAME']
+          base_key = f"qatarsale/year={dt.year}/month={dt.strftime('%m')}/day={dt.strftime('%d')}/{category}/summary"
+
+          # Summary
           summary_file = f"scrape_summary_{category}.txt"
           with open(summary_file, 'w', encoding='utf-8') as f:
               f.write(f"=== {category} ===\n")
@@ -384,18 +326,11 @@ jobs:
                       f.write(f"{col}: {missing} empty ({pct:.2f}%)\n")
                   f.write("\n")
 
-          client = boto3.client('s3',
-              endpoint_url=os.environ['CF_R2_ENDPOINT_URL'],
-              aws_access_key_id=os.environ['CF_R2_ACCESS_KEY_ID'],
-              aws_secret_access_key=os.environ['CF_R2_SECRET_ACCESS_KEY'],
-              region_name='auto'
-          )
-          bucket = os.environ['CF_R2_BUCKET_NAME']
-          key = f"qatarsale/year={dt.year}/month={dt.strftime('%m')}/day={dt.strftime('%d')}/{category}/summary/scrape_summary.txt"
-          client.upload_file(summary_file, bucket, key,
+          client.upload_file(summary_file, bucket, f"{base_key}/scrape_summary.txt",
               ExtraArgs={'ContentType': 'text/plain; charset=utf-8'})
-          print(f"Summary uploaded: {key}")
+          print(f"Summary uploaded: {base_key}/scrape_summary.txt")
 
+          # Failed URLs
           failed = []
           for f in glob.glob('excel_parts/*_failed.txt'):
               with open(f, 'r', encoding='utf-8') as file:
@@ -421,10 +356,9 @@ jobs:
               for u in failed:
                   f.write(u + '\n')
 
-          failed_key = f"qatarsale/year={dt.year}/month={dt.strftime('%m')}/day={dt.strftime('%d')}/{category}/summary/failed_urls.txt"
-          client.upload_file(failed_file, bucket, failed_key,
+          client.upload_file(failed_file, bucket, f"{base_key}/failed_urls.txt",
               ExtraArgs={'ContentType': 'text/plain; charset=utf-8'})
-          print(f"Failed URLs uploaded: {failed_key}")
+          print(f"Failed URLs uploaded: {base_key}/failed_urls.txt")
           EOF
 
   trigger_next:
@@ -432,10 +366,12 @@ jobs:
     needs: merge_subcats
     if: ${{ success() }}
     steps:
-      - name: Trigger Cars For Sale Monitor workflow
+      - name: Trigger Categories workflow
         run: |
             curl -X POST \
             -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/devops5796-netizen/QS3/dispatches \
-            -d '{"event_type": "sub_categories-done"}'
+            -d '{"event_type": "sub_sub_categories-done"}'
+
+            
