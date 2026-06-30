@@ -37,7 +37,7 @@ jobs:
           import os
           import time
           from scrapling import StealthyFetcher
-          from detect_utils import get_subcategories, analyze_category_with_products
+          from detect_utils import get_subcategories_sub, analyze_category_with_products
 
           MULTI_CATEGORIES = {
               "car_spare_parts_accessories-automotive_exterior_accessories":
@@ -121,7 +121,7 @@ jobs:
               try:
                   for attempt in range(3):
                       try:
-                          subcats = get_subcategories(base_url)
+                          subcats = get_subcategories_sub(base_url)
                           if subcats:
                               break
                           print(f"  Attempt {attempt+1}: No sub-categories found, retrying...")

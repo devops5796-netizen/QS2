@@ -1,7 +1,52 @@
 import json
 from scrapling import StealthyFetcher
 
-def get_subcategories(base_url: str) -> list:
+def get_subcategories_recursive(base_url: str, parent_names: list = []) -> list:
+    page = StealthyFetcher.fetch(base_url, headless=True, network_idle=True, timeout=90000)
+    subcats = []
+    
+    base_path = base_url.split("?")[0].replace("https://qatarsale.com", "")
+    
+    links = page.find_all("[data-testid^='at-sub-category-']")
+    links = [l for l in links if l.attrib.get("data-testid", "").replace("at-sub-category-", "") != "0"]
+    
+    real_children = [l for l in links if l.attrib.get("href", "").startswith(base_path + "-")]
+    
+    if not real_children:
+        return []
+    
+    for link in real_children:
+        href = link.attrib.get("href", "").strip()
+        if not href:
+            continue
+        name_el = link.find("p")
+        name = name_el.text.strip() if name_el else href.split("-")[-1]
+        full_url = f"https://qatarsale.com{href}"
+        slug = href.rstrip("/").split("/")[-1]
+        
+        children = get_subcategories_recursive(full_url, parent_names + [name])
+        
+        if children:
+            subcats.extend(children)
+        else:
+            if parent_names:
+                brackets = "".join([f" [{p}]" for p in parent_names])
+                display_name = f"{name}{brackets}"
+            else:
+                display_name = name
+            subcats.append({
+                "name": display_name,
+                "slug": slug,
+                "url": full_url
+            })
+    
+    return subcats
+
+
+def get_subcategories_sub_sub(base_url: str) -> list:
+    return get_subcategories_recursive(base_url)
+
+def get_subcategories_sub(base_url: str) -> list:
     page = StealthyFetcher.fetch(base_url, headless=True, network_idle=True, timeout=90000)
     subcats = []
     links = page.find_all("[data-testid^='at-sub-category-']")
