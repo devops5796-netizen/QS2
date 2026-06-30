@@ -16,7 +16,8 @@ def get_subcategories(base_url: str) -> list:
         name_el = link.find("p")
         name = name_el.text.strip() if name_el else href.split("-")[-1]
         full_url = f"https://qatarsale.com{href}" if href.startswith("/") else href
-        slug = href.rstrip("/").split("/")[-1]
+        last_segment = href.rstrip("/").split("/")[-1]
+        slug = last_segment.split("-")[-1]
         slug = "".join(c if c.isalnum() or c in "_-" else "_" for c in slug)
         subcats.append({"name": name, "slug": slug, "url": full_url})
     return subcats
