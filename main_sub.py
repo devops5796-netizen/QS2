@@ -117,7 +117,7 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
         print("\n" + "="*60)
         print("FINAL SUMMARY")
         print("="*60)
-        print(f"STEP 1   - Links:    {s1['links']['success']} pages OK | {s1['links']['failed']} failed | {s1['links']['total_links']} total")
+        print(f"STEP 1   - Links:    {s1['success']} pages OK | {s1['failed']} failed | {s1['total_links']} total")
         print(f"STEP 1.5 - Filter:   0 yesterday / {s_filter['total']} total")
         print("STEP 2   - Products: Skipped")
         print("STEP 3   - Flatten:  Skipped")
