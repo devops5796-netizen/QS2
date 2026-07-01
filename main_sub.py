@@ -98,7 +98,7 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
         print(f"⚠️ No links found for '{subcat_name}' — skipping.")
         return None
     
-    """
+    
     print("\n" + "="*50)
     print("STEP 1.5: Filtering yesterday's links...")
     print("="*50)
@@ -125,8 +125,8 @@ def run_subcat_pages(category: str, subcat_slug: str, start: int, end: int, subc
         print("="*60)
 
         return
-    """
-    s2 = products_scraper.run(links_csv, products_json, workers=4, category=category)
+    
+    s2 = products_scraper.run(filtered_csv, products_json, workers=4, category=category)
     if s2['success'] == 0:
         print(f"⚠️ No products scraped for '{subcat_name}' — skipping.")
         return None
