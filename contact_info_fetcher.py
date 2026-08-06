@@ -3,7 +3,7 @@ import re
 from text_utils import clean_text
 from request_tracker import tracker
 
-AD_URL_TEMPLATE = "https://www.dubizzle.sa/en/ad/{slug}-ID{externalID}.html"
+AD_URL_TEMPLATE = "https://www.dubizzle.com.om/en/ad/{slug}-ID{externalID}.html"
 
 CONTACT_BUTTON_SELECTORS = [
     'button:has-text("Show phone number")',
@@ -28,7 +28,7 @@ EMPTY_CONTACT_INFO = {
 def build_ad_url(record: dict) -> str | None:
     """
     Ad pages look like:
-    https://www.dubizzle.sa/en/ad/{slug}-ID{externalID}.html
+    https://www.dubizzle.com.om/en/ad/{slug}-ID{externalID}.html
 
     Builds it from the record's own `externalID` + `slug` fields. Verify these column
     names match your raw CSV -- adjust if the ES source uses different keys

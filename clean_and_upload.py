@@ -19,7 +19,7 @@ from text_utils import clean_text, sanitize_filename
 from contact_info_fetcher import build_ad_url, fetch_contact_info, EMPTY_CONTACT_INFO
 from r2_uploader import upload_buffer
 
-THUMB_URL_TEMPLATE = "https://images.dubizzle.sa/thumbnails/{photo_id}-800x600.webp"
+THUMB_URL_TEMPLATE = "https://images.dubizzle.com.om/thumbnails/{photo_id}-800x600.webp"
 
 COLUMNS_TO_DROP = ['geo_point', 'price', 'title_l1', 'description_l1', 'slug_l1', 'coverPhoto',
                    'external_link', 'external_link_l1', 'documentsTags', 'videoCount', 'documentCount'
