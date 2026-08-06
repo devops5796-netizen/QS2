@@ -1,0 +1,15 @@
+folder: DOMAN
+site_id: dubizzle-OM
+display_name: Dubizzle Oman
+website: dubizzle.com.om/en/
+country: Oman
+github_username: devops5796-netizen
+repo: 
+run_place: github
+uses_proxy: false
+r2_prefix: DOMAN
+scrapers: 11
+schedule: daily
+data_format: xlsx
+workflows:
+  - "DOMAN"
