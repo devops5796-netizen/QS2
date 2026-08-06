@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 URL = "https://search.mena.sector.run/_msearch"
-AUTHORIZATION = os.getenv("AUTHORIZATION")
+#AUTHORIZATION = os.getenv("AUTHORIZATION")
+AUTHORIZATION = "Basic b2x4LW9tLXByb2R1Y3Rpb24tc2VhcmNoOmg1PWl9alNnYSFGa1k2P0Y1NVZ0S0p6JFYkKkY1UT49"
 INDEX = "olx-om-production-ads-ar"
 LOCATION_ID = "0-1"
 
@@ -295,7 +296,7 @@ def run(category_slug: str, out_dir: str = "."):
 
     all_records = normal + featured + elite
     print(f"Before yesterday filter ({TARGET_DATE}):", len(all_records))
-    #all_records = filter_yesterday_hits(all_records)
+    all_records = filter_yesterday_hits(all_records)
     print("After yesterday filter:", len(all_records))
 
     df = pd.DataFrame(all_records)
