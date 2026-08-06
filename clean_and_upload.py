@@ -426,7 +426,7 @@ def build_complete_summary(records: list, cat0_name_l1: str, cat0_slug: str, dt:
             "name_en": cat0_name_l1,
             "slug": cat0_slug,
         },
-        "workflow_name": "dksa",
+        "workflow_name": "doman",
         "total_subcategories": len(subcategories),
         "total_listings": len(records),
         "subcategories": subcategories,

@@ -39,11 +39,11 @@ def get_r2_client():
     return None
 
 
-def build_dksa_key(category_display: str, file_type: str, filename: str, dt: datetime = None) -> str:
+def build_doman_key(category_display: str, file_type: str, filename: str, dt: datetime = None) -> str:
     """
     Date-partitioned layout:
-    DKSA/{year=YYYY/month=MM/day=DD/Category Display Name}/{file_type}/{filename}
-    e.g. DKSA/year=2026/month=07/day=23/Home & Garden/images/12345-1.webp
+    DOMAN/{year=YYYY/month=MM/day=DD/Category Display Name}/{file_type}/{filename}
+    e.g. DOMAN/year=2026/month=07/day=23/Home & Garden/images/12345-1.webp
     """
     if dt is None:
         dt = datetime.now()
@@ -52,7 +52,7 @@ def build_dksa_key(category_display: str, file_type: str, filename: str, dt: dat
     month = f"month={dt.strftime('%m')}"
     day = f"day={dt.strftime('%d')}"
 
-    return f"DKSA/{year}/{month}/{day}/{category_display}/{file_type}/{filename}"
+    return f"DOMAN/{year}/{month}/{day}/{category_display}/{file_type}/{filename}"
 
 
 def upload_buffer(
@@ -67,7 +67,7 @@ def upload_buffer(
     if not client or not BUCKET_NAME:
         return None
 
-    r2_key = build_dksa_key(category_display, file_type, filename, dt)
+    r2_key = build_doman_key(category_display, file_type, filename, dt)
 
     try:
         buffer.seek(0)
