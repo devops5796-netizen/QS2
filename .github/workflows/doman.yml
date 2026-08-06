@@ -45,8 +45,8 @@ jobs:
         run: playwright install --with-deps chromium
 
       - name: Scrape ${{ matrix.category }}
-        env:
-          AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+        # env:
+        #   AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
         run: python main.py --category ${{ matrix.category }} --out-dir data
 
       - name: Clean & upload (exclude summary.json)
