@@ -16,19 +16,19 @@ jobs:
       max-parallel: 3
       matrix:
         category:
-          # - vehicles
-          # - properties-for-rent
-          # - properties-for-sale
-          # - mobile-phones-accessories
-          # - electronics-home-appliances
-          # - home-garden
-          # - fashion-beauty
-          # - pets
-          # - kids-babies
-          # - sporting-goods-bikes
-          # - hobbies-music-art-books
-          # - jobs-services
-          # - business-industrial
+          - vehicles
+          - properties-for-rent
+          - properties-for-sale
+          - mobile-phones-accessories
+          - electronics-home-appliances
+          - home-garden
+          - fashion-beauty
+          - pets
+          - kids-babies
+          - sporting-goods-bikes
+          - hobbies-music-art-books
+          - jobs-services
+          - business-industrial
           - services
 
     steps:
