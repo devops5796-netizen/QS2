@@ -8,7 +8,7 @@ import requests
 from request_tracker import tracker
 
 BASE_URL = "https://content.dubizzle.com.om/api/new-cars/all-new-cars"
-DETAILS_BASE = "https://content.dubizzle.com.om/api/"
+DETAILS_BASE = "https://www.dubizzle.com.om/en/motors"
 
 
 HEADERS = {
