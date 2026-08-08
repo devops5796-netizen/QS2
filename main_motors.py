@@ -8,7 +8,7 @@ import requests
 from request_tracker import tracker
 
 BASE_URL = "https://content.dubizzle.com.om/api/new-cars/all-new-cars"
-DETAILS_BASE = "https://www.dubizzle.com.om/en/motors"
+DETAILS_BASE = "https://content.dubizzle.com.om/api"
 
 
 HEADERS = {
@@ -67,6 +67,10 @@ def cars_details(slug_url, max_retries: int = 3):
             response = requests.get(url, headers=HEADERS, timeout=30)
             response.raise_for_status()
             tracker.log_request(source="car_details", success=True)
+            print("URL:", response.url)
+            print("STATUS:", response.status_code)
+            print("CONTENT-TYPE:", response.headers.get("content-type"))
+            print("RESPONSE:", response.text[:300])
             data = response.json()
             break
         except Exception as e:
